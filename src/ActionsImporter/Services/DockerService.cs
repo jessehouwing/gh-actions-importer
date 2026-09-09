@@ -15,6 +15,9 @@ public class DockerService : IDockerService
 
     public DockerService(IProcessService processService, IRuntimeService runtimeService, ImmutableDictionary<string, string> environmentVariables)
     {
+        ArgumentNullException.ThrowIfNull(processService);
+        ArgumentNullException.ThrowIfNull(runtimeService);
+        ArgumentNullException.ThrowIfNull(environmentVariables);
         _processService = processService;
         _runtimeService = runtimeService;
         _containerCli = environmentVariables.TryGetValue("CONTAINER_CLI", out var containerCli) && !string.IsNullOrWhiteSpace(containerCli) ? containerCli : "docker";
