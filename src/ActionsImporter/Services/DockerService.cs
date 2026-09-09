@@ -147,8 +147,8 @@ public class DockerService : IDockerService
     {
         if (IsWslc)
         {
-            var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect {server}/{image}");
-            return GetDigestFromImageInspect(standardOutput);
+            var (inspectOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect {server}/{image}");
+            return GetDigestFromImageInspect(inspectOutput);
         }
 
         var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect --format={{{{.Id}}}} {server}/{image}");
