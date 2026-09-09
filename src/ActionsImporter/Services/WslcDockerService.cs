@@ -38,6 +38,7 @@ public class WslcDockerService : DockerService
 
     protected override string GetVolumePath(string path)
     {
+        ArgumentNullException.ThrowIfNull(path);
         return path.Replace('\\', '/');
     }
 
