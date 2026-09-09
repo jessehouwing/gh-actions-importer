@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ActionsImporter.Interfaces;
@@ -25,13 +26,15 @@ public class DockerServiceTests
     {
         _processService = new Mock<IProcessService>();
         _runtimeService = new Mock<IRuntimeService>();
-        _dockerService = new DockerService(_processService.Object, _runtimeService.Object);
+        _dockerService = new DockerService(_processService.Object, _runtimeService.Object, ImmutableDictionary<string, string>.Empty);
     }
 
     [TearDown]
     public void AfterEachTest()
     {
         Environment.SetEnvironmentVariable("DOCKER_ARGS", null);
+        Environment.SetEnvironmentVariable("WSLC_ARGS", null);
+        Environment.SetEnvironmentVariable("CONTAINER_ARGS", null);
         Environment.SetEnvironmentVariable("GH_ACCESS_TOKEN", null);
         Environment.SetEnvironmentVariable("GH_INSTANCE_URL", null);
         Environment.SetEnvironmentVariable("JENKINS_ACCESS_TOKEN", null);
@@ -329,6 +332,40 @@ public class DockerServiceTests
     }
 
     [Test]
+    public async Task ExecuteCommandAsync_InvokesWslc_WithBackendSpecificArguments_ReturnsTrue()
+    {
+        // Arrange
+        var dockerService = new DockerService(
+            _processService.Object,
+            _runtimeService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+        var image = "actions-importer/cli";
+        var server = "ghcr.io";
+        var version = "latest";
+        var noHostNetwork = false;
+        var arguments = new[] { "run", "this", "command" };
+
+        Environment.SetEnvironmentVariable("WSLC_ARGS", "--detach");
+
+        _processService.Setup(handler =>
+            handler.RunAsync(
+                "wslc",
+                $"run --rm -t --network=host --detach -v \"{Directory.GetCurrentDirectory()}\":/data {server}/{image}:{version} {string.Join(' ', arguments)}",
+                Directory.GetCurrentDirectory(),
+                new[] { new ValueTuple<string, string>("MSYS_NO_PATHCONV", "1") },
+                true
+            )
+        ).Returns(Task.CompletedTask);
+
+        // Act
+        await dockerService.ExecuteCommandAsync(image, server, version, noHostNetwork, arguments);
+
+        // Assert
+        _processService.VerifyAll();
+    }
+
+    [Test]
     public void VerifyImagePresentAsync_IsPresent_NoException()
     {
         // Arrange
@@ -349,6 +386,30 @@ public class DockerServiceTests
         // Act, Assert
         Assert.DoesNotThrowAsync(() => _dockerService.VerifyImagePresentAsync(image, server, version, false));
         _processService.VerifyAll();
+    }
+
+    [Test]
+    public void VerifyDockerRunningAsync_WslcInstalled_NoException()
+    {
+        // Arrange
+        var dockerService = new DockerService(
+            _processService.Object,
+            _runtimeService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+
+        _processService.Setup(handler =>
+            handler.RunAsync(
+                "wslc",
+                "version",
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<(string, string)>?>(),
+                It.IsAny<bool>()
+            )
+        ).Returns(Task.CompletedTask);
+
+        // Act, Assert
+        Assert.DoesNotThrowAsync(() => dockerService.VerifyDockerRunningAsync());
     }
 
     [Test]

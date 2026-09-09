@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Immutable;
+using System.Text.Json;
 using ActionsImporter.Interfaces;
 using ActionsImporter.Models.Docker;
 using ActionsImporter.Models;
@@ -9,11 +10,14 @@ public class DockerService : IDockerService
 {
     private readonly IProcessService _processService;
     private readonly IRuntimeService _runtimeService;
+    private readonly string _containerCli;
+    private bool IsWslc => _containerCli.Equals("wslc", StringComparison.OrdinalIgnoreCase);
 
-    public DockerService(IProcessService processService, IRuntimeService runtimeService)
+    public DockerService(IProcessService processService, IRuntimeService runtimeService, ImmutableDictionary<string, string> environmentVariables)
     {
         _processService = processService;
         _runtimeService = runtimeService;
+        _containerCli = environmentVariables.TryGetValue("CONTAINER_CLI", out var containerCli) && !string.IsNullOrWhiteSpace(containerCli) ? containerCli : "docker";
     }
 
     public Task UpdateImageAsync(string image, string server, string version)
@@ -35,10 +39,12 @@ public class DockerService : IDockerService
 
         actionsImporterArguments.AddRange(GetEnvironmentVariableArguments());
 
-        var dockerArgs = Environment.GetEnvironmentVariable("DOCKER_ARGS");
-        if (dockerArgs is not null)
+        var containerArgs = Environment.GetEnvironmentVariable("CONTAINER_ARGS")
+            ?? Environment.GetEnvironmentVariable(IsWslc ? "WSLC_ARGS" : "DOCKER_ARGS")
+            ?? (IsWslc ? Environment.GetEnvironmentVariable("DOCKER_ARGS") : null);
+        if (containerArgs is not null)
         {
-            actionsImporterArguments.Add(dockerArgs);
+            actionsImporterArguments.Add(containerArgs);
         }
 
         // Forward the current user's UID/GID to the container
@@ -55,7 +61,7 @@ public class DockerService : IDockerService
         actionsImporterArguments.AddRange(arguments);
 
         await _processService.RunAsync(
-            "docker",
+            _containerCli,
             string.Join(' ', actionsImporterArguments),
             Directory.GetCurrentDirectory(),
             new[] { ("MSYS_NO_PATHCONV", "1") }
@@ -69,7 +75,7 @@ public class DockerService : IDockerService
         actionsImporterArguments.Add($"{server}/{image}:{version}");
         actionsImporterArguments.AddRange(new[] { "list-features", "--json" });
 
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", string.Join(' ', actionsImporterArguments), throwOnError: false);
+        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, string.Join(' ', actionsImporterArguments), throwOnError: false);
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
         try
@@ -89,14 +95,16 @@ public class DockerService : IDockerService
         try
         {
             await _processService.RunAsync(
-                "docker",
-                "info",
+                _containerCli,
+                IsWslc ? "version" : "info",
                 output: false
             );
         }
         catch (Exception)
         {
-            throw new Exception("Please ensure docker is installed and the docker daemon is running");
+            throw new Exception(IsWslc
+                ? "Please ensure wslc is installed and WSL containers are available"
+                : "Please ensure docker is installed and the docker daemon is running");
         }
     }
 
@@ -107,7 +115,7 @@ public class DockerService : IDockerService
         try
         {
             await _processService.RunAsync(
-                "docker",
+                _containerCli,
                 $"image inspect {server}/{image}:{version}",
                 output: false
             );
@@ -121,7 +129,7 @@ public class DockerService : IDockerService
 
     public async Task<string?> GetLatestImageDigestAsync(string image, string server)
     {
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", $"manifest inspect {server}/{image}");
+        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"manifest inspect {server}/{image}");
         Manifest? manifest = JsonSerializer.Deserialize<Manifest>(standardOutput);
 
         return manifest?.GetDigest();
@@ -129,7 +137,7 @@ public class DockerService : IDockerService
 
     public async Task<string?> GetCurrentImageDigestAsync(string image, string server)
     {
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", $"image inspect --format={{{{.Id}}}} {server}/{image}");
+        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect --format={{{{.Id}}}} {server}/{image}");
 
         return standardOutput.Split(":").ElementAtOrDefault(1)?.Trim();
     }
@@ -159,7 +167,7 @@ public class DockerService : IDockerService
     {
         Console.WriteLine($"Updating {server}/{image}:{version}...");
         var (_, standardError, exitCode) = await _processService.RunAndCaptureAsync(
-            "docker",
+            _containerCli,
             $"pull {server}/{image}:{version} --quiet",
             throwOnError: false
         );

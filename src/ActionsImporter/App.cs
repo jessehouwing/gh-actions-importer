@@ -17,6 +17,7 @@ public class App
 
     private readonly ImmutableDictionary<string, string> _environmentVariables;
     private string ImageTag => IsPrerelease ? "pre" : "latest";
+    private string ContainerCli => _environmentVariables.TryGetValue("CONTAINER_CLI", out var containerCli) && !string.IsNullOrWhiteSpace(containerCli) ? containerCli : "docker";
 
     private string ImageName => $"{ActionsImporterImage}:{ImageTag}";
     private readonly string ActionsImporterContainerRegistry;
@@ -67,7 +68,7 @@ public class App
     {
         var (standardOutput, standardError, exitCode) = await _processService.RunAndCaptureAsync("gh", "version");
         var ghActionsImporterVersion = await _processService.RunAndCaptureAsync("gh", "extension list");
-        var actionsImporterVersion = await _processService.RunAndCaptureAsync("docker", $"run --rm {ActionsImporterContainerRegistry}/{ImageName} version", throwOnError: false);
+        var actionsImporterVersion = await _processService.RunAndCaptureAsync(ContainerCli, $"run --rm {ActionsImporterContainerRegistry}/{ImageName} version", throwOnError: false);
 
         var formattedGhVersion = standardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
         var formattedGhActionsImporterVersion = ghActionsImporterVersion.standardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
