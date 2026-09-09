@@ -35,7 +35,7 @@ public class DockerService : IDockerService
             "run --rm -t"
         };
 
-        if (!noHostNetwork)
+        if (ShouldUseHostNetwork(noHostNetwork))
         {
             actionsImporterArguments.Add("--network=host");
         }
@@ -59,7 +59,7 @@ public class DockerService : IDockerService
             actionsImporterArguments.Add($"-e USER_ID={userId.TrimEnd()}");
             actionsImporterArguments.Add($"-e GROUP_ID={groupId.TrimEnd()}");
         }
-        actionsImporterArguments.Add($"-v \"{Directory.GetCurrentDirectory()}\":/data");
+        actionsImporterArguments.Add($"-v \"{GetVolumePath(Directory.GetCurrentDirectory())}\":/data");
         actionsImporterArguments.Add($"{server}/{image}:{version}");
         actionsImporterArguments.AddRange(arguments);
 
@@ -132,6 +132,11 @@ public class DockerService : IDockerService
 
     public async Task<string?> GetLatestImageDigestAsync(string image, string server)
     {
+        if (IsWslc)
+        {
+            return null;
+        }
+
         var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"manifest inspect {server}/{image}");
         Manifest? manifest = JsonSerializer.Deserialize<Manifest>(standardOutput);
 
@@ -140,6 +145,12 @@ public class DockerService : IDockerService
 
     public async Task<string?> GetCurrentImageDigestAsync(string image, string server)
     {
+        if (IsWslc)
+        {
+            var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect {server}/{image}");
+            return GetDigestFromImageInspect(standardOutput);
+        }
+
         var (standardOutput, _, _) = await _processService.RunAndCaptureAsync(_containerCli, $"image inspect --format={{{{.Id}}}} {server}/{image}");
 
         return standardOutput.Split(":").ElementAtOrDefault(1)?.Trim();
@@ -171,7 +182,7 @@ public class DockerService : IDockerService
         Console.WriteLine($"Updating {server}/{image}:{version}...");
         var (_, standardError, exitCode) = await _processService.RunAndCaptureAsync(
             _containerCli,
-            $"pull {server}/{image}:{version} --quiet",
+            IsWslc ? $"pull {server}/{image}:{version}" : $"pull {server}/{image}:{version} --quiet",
             throwOnError: false
         );
 
@@ -183,5 +194,64 @@ public class DockerService : IDockerService
             throw new Exception(errorMessage);
         }
         Console.WriteLine($"{server}/{image}:{version} up-to-date");
+    }
+
+    private bool ShouldUseHostNetwork(bool noHostNetwork)
+    {
+        return !noHostNetwork && !IsWslc;
+    }
+
+    private string GetVolumePath(string path)
+    {
+        return IsWslc ? path.Replace('\\', '/') : path;
+    }
+
+    private static string? GetDigestFromImageInspect(string standardOutput)
+    {
+        using var document = JsonDocument.Parse(standardOutput);
+
+        var root = document.RootElement.ValueKind == JsonValueKind.Array
+            ? document.RootElement.EnumerateArray().FirstOrDefault()
+            : document.RootElement;
+
+        if (root.ValueKind == JsonValueKind.Undefined || root.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "RepoDigests", out var repoDigests) &&
+            repoDigests.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var repoDigest in repoDigests.EnumerateArray())
+            {
+                var digest = repoDigest.GetString()?.Split('@').ElementAtOrDefault(1);
+                if (!string.IsNullOrWhiteSpace(digest))
+                {
+                    return digest.Split(':').ElementAtOrDefault(1)?.Trim();
+                }
+            }
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "Id", out var id) && id.ValueKind == JsonValueKind.String)
+        {
+            return id.GetString()?.Split(':').ElementAtOrDefault(1)?.Trim();
+        }
+
+        return null;
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.NameEquals(propertyName) || property.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 }

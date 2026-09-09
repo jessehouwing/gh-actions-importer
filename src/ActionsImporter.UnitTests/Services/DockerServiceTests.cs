@@ -351,7 +351,7 @@ public class DockerServiceTests
         _processService.Setup(handler =>
             handler.RunAsync(
                 "wslc",
-                $"run --rm -t --network=host --detach -v \"{Directory.GetCurrentDirectory()}\":/data {server}/{image}:{version} {string.Join(' ', arguments)}",
+                $"run --rm -t --detach -v \"{Directory.GetCurrentDirectory()}\":/data {server}/{image}:{version} {string.Join(' ', arguments)}",
                 Directory.GetCurrentDirectory(),
                 new[] { new ValueTuple<string, string>("MSYS_NO_PATHCONV", "1") },
                 true
@@ -413,6 +413,37 @@ public class DockerServiceTests
     }
 
     [Test]
+    public async Task UpdateImageAsync_Wslc_PullsWithoutQuietFlag()
+    {
+        // Arrange
+        var dockerService = new DockerService(
+            _processService.Object,
+            _runtimeService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+        var image = "actions-importer/cli";
+        var server = "ghcr.io";
+        var version = "latest";
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync(
+                "wslc",
+                $"pull {server}/{image}:{version}",
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<(string, string)>?>(),
+                It.IsAny<bool>(),
+                null
+            )
+        ).ReturnsAsync(("", "", 0));
+
+        // Act
+        await dockerService.UpdateImageAsync(image, server, version);
+
+        // Assert
+        _processService.VerifyAll();
+    }
+
+    [Test]
     public void VerifyImagePresentAsync_NotPresent_ThrowsException()
     {
         // Arrange
@@ -455,6 +486,45 @@ public class DockerServiceTests
 
         // Act
         var result = await _dockerService.GetCurrentImageDigestAsync(image, server);
+
+        // Assert
+        Assert.AreEqual("67eed1493c461efd993be9777598a456562f4e0c6b0bddcb19d819220a06dd4b", result);
+        _processService.VerifyAll();
+    }
+
+    [Test]
+    public async Task GetCurrentImageDigest_Wslc_ParsesDigestFromImageInspect()
+    {
+        // Arrange
+        var dockerService = new DockerService(
+            _processService.Object,
+            _runtimeService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+        var image = "actions-importer/cli:latest";
+        var server = "ghcr.io";
+        var inspectResult = @"
+[
+  {
+    ""RepoDigests"": [
+      ""ghcr.io/actions-importer/cli@sha256:67eed1493c461efd993be9777598a456562f4e0c6b0bddcb19d819220a06dd4b""
+    ]
+  }
+]";
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync(
+                "wslc",
+                $"image inspect {server}/{image}",
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<(string, string)>?>(),
+                It.IsAny<bool>(),
+                null
+            )
+        ).ReturnsAsync((inspectResult, "", 0));
+
+        // Act
+        var result = await dockerService.GetCurrentImageDigestAsync(image, server);
 
         // Assert
         Assert.AreEqual("67eed1493c461efd993be9777598a456562f4e0c6b0bddcb19d819220a06dd4b", result);
@@ -542,5 +612,23 @@ public class DockerServiceTests
         // Assert
         Assert.AreEqual("4256ea72fd01deac3e967f6b19f907587dcd6f0a976301f1aecc73dc6f146a4a", result);
         _processService.VerifyAll();
+    }
+
+    [Test]
+    public async Task GetLatestImageDigest_Wslc_ReturnsNull()
+    {
+        // Arrange
+        var dockerService = new DockerService(
+            _processService.Object,
+            _runtimeService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+
+        // Act
+        var result = await dockerService.GetLatestImageDigestAsync("actions-importer/cli:latest", "ghcr.io");
+
+        // Assert
+        Assert.IsNull(result);
+        _processService.VerifyNoOtherCalls();
     }
 }

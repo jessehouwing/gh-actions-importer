@@ -65,6 +65,8 @@ Docker is used by default. To use the Windows Subsystem for Linux Containers CLI
 CONTAINER_CLI=wslc
 ```
 
+When `CONTAINER_CLI=wslc` is configured, GitHub Actions Importer automatically avoids Docker-only flags that `wslc` doesn't support, including `docker run --network=host` and `docker pull --quiet`.
+
 #### Using a custom Docker registry
 
 We highly recommend using the [official GitHub Container Registry to pull the GitHub Actions Importer Docker image](https://github.com/actions-importer/preview/pkgs/container/cli/). However, if you need to use a custom Docker registry, you can configure GitHub Actions Importer to use a custom Docker registry by setting the `CONTAINER_REGISTRY` environment variable in your `.env.local` file.
