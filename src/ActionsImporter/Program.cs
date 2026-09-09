@@ -11,9 +11,13 @@ using Version = ActionsImporter.Commands.Version;
 var processService = new ProcessService();
 var configurationService = new ConfigurationService();
 var environmentVariables = await configurationService.ReadCurrentVariablesAsync();
+var containerCli = environmentVariables.TryGetValue("CONTAINER_CLI", out var configuredContainerCli) ? configuredContainerCli : null;
+var dockerService = string.Equals(containerCli, "wslc", StringComparison.OrdinalIgnoreCase)
+    ? new WslcDockerService(processService, new RuntimeService())
+    : new DockerService(processService, new RuntimeService());
 
 var app = new App(
-    new DockerService(processService, new RuntimeService(), environmentVariables),
+    dockerService,
     processService,
     configurationService,
     environmentVariables
