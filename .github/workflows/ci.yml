@@ -66,7 +66,7 @@ jobs:
         working-directory: src
         run: |
           dotnet tool install --global ThirdLicense --version 1.4.1
-          thirdlicense --project ActionsImporter.sln --output ../.licenses/new-licenses.txt
+          thirdlicense --project ActionsImporter.sln --output ../.licenses/new-licenses.txt > ../.licenses/thirdlicense.log 2>&1 || { cat ../.licenses/thirdlicense.log; exit 1; }
           diff -u ../.licenses/new-licenses.txt ../.licenses/licenses.txt
       - name: dotnet publish
         working-directory: src
