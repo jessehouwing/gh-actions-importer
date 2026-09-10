@@ -12,10 +12,10 @@ var processService = new ProcessService();
 var configurationService = new ConfigurationService();
 var environmentVariables = await configurationService.ReadCurrentVariablesAsync();
 var containerCli = environmentVariables.TryGetValue("CONTAINER_CLI", out var configuredContainerCli) ? configuredContainerCli : null;
-var dockerService = containerCli?.ToLowerInvariant() switch
+var dockerService = containerCli?.ToUpperInvariant() switch
 {
-    "wslc" => new WslcDockerService(processService, new RuntimeService()),
-    "podman" => new PodmanDockerService(processService, new RuntimeService()),
+    "WSLC" => new WslcDockerService(processService, new RuntimeService()),
+    "PODMAN" => new PodmanDockerService(processService, new RuntimeService()),
     _ => new DockerService(processService, new RuntimeService())
 };
 
