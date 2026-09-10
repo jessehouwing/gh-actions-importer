@@ -33,6 +33,8 @@ public class DockerServiceTests
     {
         Environment.SetEnvironmentVariable("DOCKER_ARGS", null);
         Environment.SetEnvironmentVariable("CONTAINER_ARGS", null);
+        Environment.SetEnvironmentVariable("PODMAN_ARGS", null);
+        Environment.SetEnvironmentVariable("WSLC_ARGS", null);
         Environment.SetEnvironmentVariable("GH_ACCESS_TOKEN", null);
         Environment.SetEnvironmentVariable("GH_INSTANCE_URL", null);
         Environment.SetEnvironmentVariable("JENKINS_ACCESS_TOKEN", null);
@@ -264,6 +266,58 @@ public class DockerServiceTests
 
         // Assert
         Assert.AreEqual(featuresJSON, featuresResultJSON);
+    }
+
+    [TestCase("docker", "CONTAINER_ARGS", "DOCKER_ARGS")]
+    [TestCase("docker", "DOCKER_ARGS", null)]
+    [TestCase("podman", "CONTAINER_ARGS", "PODMAN_ARGS")]
+    [TestCase("podman", "PODMAN_ARGS", "DOCKER_ARGS")]
+    [TestCase("podman", "DOCKER_ARGS", null)]
+    [TestCase("wslc", "CONTAINER_ARGS", "WSLC_ARGS")]
+    [TestCase("wslc", "WSLC_ARGS", "DOCKER_ARGS")]
+    [TestCase("wslc", "DOCKER_ARGS", null)]
+    public async Task GetFeaturesAsync_WithAdditionalArguments_UsesBackendPrecedence(
+        string containerCli, string argumentVariable, string? fallbackVariable)
+    {
+        // Arrange
+        const string containerArgs = "--volume \"/path with spaces/ca-bundle.pem:/certs/ca-bundle.pem:ro\" --env SSL_CERT_FILE=/certs/ca-bundle.pem";
+        Environment.SetEnvironmentVariable("CONTAINER_ARGS", null);
+        Environment.SetEnvironmentVariable("DOCKER_ARGS", null);
+        Environment.SetEnvironmentVariable("PODMAN_ARGS", null);
+        Environment.SetEnvironmentVariable("WSLC_ARGS", null);
+        Environment.SetEnvironmentVariable(argumentVariable, containerArgs);
+        if (fallbackVariable is not null)
+        {
+            Environment.SetEnvironmentVariable(fallbackVariable, "--network=bridge");
+        }
+        Environment.SetEnvironmentVariable("GH_INSTANCE_URL", "https://github.fabrikam.com");
+
+        DockerService dockerService = containerCli switch
+        {
+            "podman" => new PodmanDockerService(_processService.Object, _runtimeService.Object),
+            "wslc" => new WslcDockerService(_processService.Object, _runtimeService.Object),
+            _ => _dockerService
+        };
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync(
+                containerCli,
+                $"run --rm -t --env \"GITHUB_INSTANCE_URL=https://github.fabrikam.com\" {containerArgs} ghcr.io/actions-importer/cli:latest list-features --json",
+                null,
+                null,
+                false,
+                null
+            )
+        ).ReturnsAsync(("[{\"name\":\"test-feature\",\"enabled\":true}]", "", 0));
+
+        // Act
+        var features = await dockerService.GetFeaturesAsync("actions-importer/cli", "ghcr.io", "latest");
+
+        // Assert
+        Assert.That(features, Has.Count.EqualTo(1));
+        Assert.That(features[0].Name, Is.EqualTo("test-feature"));
+        Assert.That(features[0].Enabled, Is.True);
+        _processService.VerifyAll();
     }
 
     [Test]

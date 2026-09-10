@@ -112,7 +112,7 @@ Keep the following in mind:
 - Setting `SSL_CERT_FILE` on the host alone does not forward it into the container; use `--env` as shown above.
 - If an explicit proxy is required, set `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` as appropriate in your shell. GitHub Actions Importer forwards these variables into the container.
 - Configure proxy access and CA trust separately for the host tools and container runtime. These container run arguments do not affect image pulls, including `gh actions-importer update`.
-- The internal feature-discovery container does not currently receive `CONTAINER_ARGS` or `DOCKER_ARGS`.
+- These additional container arguments also apply to the internal feature-discovery container, so it receives the same certificate mounts and environment settings.
 - Avoid `--no-ssl-verify` as a solution: it disables certificate verification instead of establishing trust.
 
 ### Documentation
