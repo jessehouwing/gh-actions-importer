@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using ActionsImporter.Interfaces;
@@ -33,6 +34,36 @@ public class AppTests
     public void AfterEachTest()
     {
         Console.SetOut(_out);
+    }
+
+    [Test]
+    public async Task GetVersionAsync_UsesConfiguredContainerCli()
+    {
+        // Arrange
+        _app = new App(
+            _dockerService.Object,
+            _processService.Object,
+            _configurationService.Object,
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+        );
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("gh", "version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), It.IsAny<bool>(), null)
+        ).ReturnsAsync(("gh version 2.0.0", "", 0));
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("gh", "extension list", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), It.IsAny<bool>(), null)
+        ).ReturnsAsync(("github/gh-actions-importer", "", 0));
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("wslc", "run --rm ghcr.io/actions-importer/cli:latest version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), false, null)
+        ).ReturnsAsync(("1.0.0", "", 0));
+
+        // Act
+        await _app.GetVersionAsync();
+
+        // Assert
+        _processService.VerifyAll();
     }
 
     [TestCase("4256ea72fd01deac3e967f6b19f907587dcd6f0a976301f1aecc73dc6f146a4a", "4256ea72fd01deac3e967f6b19f907587dcd6f0a976301f1aecc73dc6f146a4a", "")]

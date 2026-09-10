@@ -32,6 +32,7 @@ public class DockerServiceTests
     public void AfterEachTest()
     {
         Environment.SetEnvironmentVariable("DOCKER_ARGS", null);
+        Environment.SetEnvironmentVariable("CONTAINER_ARGS", null);
         Environment.SetEnvironmentVariable("GH_ACCESS_TOKEN", null);
         Environment.SetEnvironmentVariable("GH_INSTANCE_URL", null);
         Environment.SetEnvironmentVariable("JENKINS_ACCESS_TOKEN", null);
@@ -482,4 +483,5 @@ public class DockerServiceTests
         Assert.AreEqual("4256ea72fd01deac3e967f6b19f907587dcd6f0a976301f1aecc73dc6f146a4a", result);
         _processService.VerifyAll();
     }
+
 }

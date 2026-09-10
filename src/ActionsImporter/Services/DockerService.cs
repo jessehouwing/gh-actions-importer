@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using ActionsImporter.Interfaces;
-using ActionsImporter.Models.Docker;
 using ActionsImporter.Models;
+using ActionsImporter.Models.Docker;
 
 namespace ActionsImporter.Services;
 
@@ -10,15 +10,23 @@ public class DockerService : IDockerService
     private readonly IProcessService _processService;
     private readonly IRuntimeService _runtimeService;
 
+    protected IProcessService ProcessService => _processService;
+    protected IRuntimeService RuntimeService => _runtimeService;
+    protected virtual string ContainerCli => "docker";
+    protected virtual string VerifyRunningCommand => "info";
+    protected virtual string VerifyRunningErrorMessage => "Please ensure docker is installed and the docker daemon is running";
+
     public DockerService(IProcessService processService, IRuntimeService runtimeService)
     {
+        ArgumentNullException.ThrowIfNull(processService);
+        ArgumentNullException.ThrowIfNull(runtimeService);
         _processService = processService;
         _runtimeService = runtimeService;
     }
 
     public Task UpdateImageAsync(string image, string server, string version)
     {
-        return DockerPullAsync(image, server, version);
+        return PullImageAsync(image, server, version);
     }
 
     public async Task ExecuteCommandAsync(string image, string server, string version, bool noHostNetwork, params string[] arguments)
@@ -28,34 +36,33 @@ public class DockerService : IDockerService
             "run --rm -t"
         };
 
-        if (!noHostNetwork)
+        if (UseHostNetwork(noHostNetwork))
         {
             actionsImporterArguments.Add("--network=host");
         }
 
         actionsImporterArguments.AddRange(GetEnvironmentVariableArguments());
 
-        var dockerArgs = Environment.GetEnvironmentVariable("DOCKER_ARGS");
-        if (dockerArgs is not null)
+        var containerArgs = GetContainerArgs();
+        if (containerArgs is not null)
         {
-            actionsImporterArguments.Add(dockerArgs);
+            actionsImporterArguments.Add(containerArgs);
         }
 
-        // Forward the current user's UID/GID to the container
-        // to ensure the output files are owned by the current user
-        if (_runtimeService.IsLinux)
+        if (RuntimeService.IsLinux)
         {
-            var (userId, _, _) = await _processService.RunAndCaptureAsync("id", "-u");
-            var (groupId, _, _) = await _processService.RunAndCaptureAsync("id", "-g");
+            var (userId, _, _) = await ProcessService.RunAndCaptureAsync("id", "-u");
+            var (groupId, _, _) = await ProcessService.RunAndCaptureAsync("id", "-g");
             actionsImporterArguments.Add($"-e USER_ID={userId.TrimEnd()}");
             actionsImporterArguments.Add($"-e GROUP_ID={groupId.TrimEnd()}");
         }
-        actionsImporterArguments.Add($"-v \"{Directory.GetCurrentDirectory()}\":/data");
+
+        actionsImporterArguments.Add($"-v \"{GetVolumePath(Directory.GetCurrentDirectory())}\":/data");
         actionsImporterArguments.Add($"{server}/{image}:{version}");
         actionsImporterArguments.AddRange(arguments);
 
-        await _processService.RunAsync(
-            "docker",
+        await ProcessService.RunAsync(
+            ContainerCli,
             string.Join(' ', actionsImporterArguments),
             Directory.GetCurrentDirectory(),
             new[] { ("MSYS_NO_PATHCONV", "1") }
@@ -69,7 +76,7 @@ public class DockerService : IDockerService
         actionsImporterArguments.Add($"{server}/{image}:{version}");
         actionsImporterArguments.AddRange(new[] { "list-features", "--json" });
 
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", string.Join(' ', actionsImporterArguments), throwOnError: false);
+        var (standardOutput, _, _) = await ProcessService.RunAndCaptureAsync(ContainerCli, string.Join(' ', actionsImporterArguments), throwOnError: false);
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
         try
@@ -78,8 +85,6 @@ public class DockerService : IDockerService
         }
         catch (Exception)
         {
-            // If unable to get the features from the container, return an empty list
-            // An empty list will result in a message being displayed to the user
             return new();
         }
     }
@@ -88,15 +93,15 @@ public class DockerService : IDockerService
     {
         try
         {
-            await _processService.RunAsync(
-                "docker",
-                "info",
+            await ProcessService.RunAsync(
+                ContainerCli,
+                VerifyRunningCommand,
                 output: false
             );
         }
         catch (Exception)
         {
-            throw new Exception("Please ensure docker is installed and the docker daemon is running");
+            throw new Exception(VerifyRunningErrorMessage);
         }
     }
 
@@ -106,32 +111,78 @@ public class DockerService : IDockerService
         var preReleaseOption = isPrerelease ? " --prerelease" : string.Empty;
         try
         {
-            await _processService.RunAsync(
-                "docker",
+            await ProcessService.RunAsync(
+                ContainerCli,
                 $"image inspect {server}/{image}:{version}",
                 output: false
             );
         }
-
         catch (Exception)
         {
             throw new Exception($"Unable to locate {imageName} image locally. Please run `gh actions-importer update{preReleaseOption}` to fetch the latest image prior to running this command.");
         }
     }
 
-    public async Task<string?> GetLatestImageDigestAsync(string image, string server)
+    public virtual async Task<string?> GetLatestImageDigestAsync(string image, string server)
     {
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", $"manifest inspect {server}/{image}");
+        var (standardOutput, _, _) = await ProcessService.RunAndCaptureAsync(ContainerCli, $"manifest inspect {server}/{image}");
         Manifest? manifest = JsonSerializer.Deserialize<Manifest>(standardOutput);
 
         return manifest?.GetDigest();
     }
 
-    public async Task<string?> GetCurrentImageDigestAsync(string image, string server)
+    public virtual async Task<string?> GetCurrentImageDigestAsync(string image, string server)
     {
-        var (standardOutput, _, _) = await _processService.RunAndCaptureAsync("docker", $"image inspect --format={{{{.Id}}}} {server}/{image}");
+        var (standardOutput, _, _) = await ProcessService.RunAndCaptureAsync(ContainerCli, $"image inspect --format={{{{.Id}}}} {server}/{image}");
 
         return standardOutput.Split(":").ElementAtOrDefault(1)?.Trim();
+    }
+
+    protected virtual bool UseHostNetwork(bool noHostNetwork)
+    {
+        return !noHostNetwork;
+    }
+
+    protected virtual string? GetContainerArgs()
+    {
+        return Environment.GetEnvironmentVariable("CONTAINER_ARGS")
+            ?? Environment.GetEnvironmentVariable("DOCKER_ARGS");
+    }
+
+    protected virtual string GetVolumePath(string path)
+    {
+        return path;
+    }
+
+    protected static string? GetDigestFromImageInspect(string standardOutput)
+    {
+        using var document = JsonDocument.Parse(standardOutput);
+
+        var root = document.RootElement.ValueKind == JsonValueKind.Array
+            ? document.RootElement.EnumerateArray().FirstOrDefault()
+            : document.RootElement;
+
+        if (root.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "RepoDigests", out var repoDigests) &&
+            repoDigests.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var repoDigest in repoDigests.EnumerateArray())
+            {
+                var digest = repoDigest.GetString()?.Split('@').ElementAtOrDefault(1);
+                if (!string.IsNullOrWhiteSpace(digest))
+                {
+                    return digest.Split(':').ElementAtOrDefault(1)?.Trim();
+                }
+            }
+        }
+
+        return TryGetPropertyIgnoreCase(root, "Id", out var id) && id.ValueKind == JsonValueKind.String
+            ? id.GetString()?.Split(':').ElementAtOrDefault(1)?.Trim()
+            : null;
     }
 
     private static IEnumerable<string> GetEnvironmentVariableArguments()
@@ -155,12 +206,12 @@ public class DockerService : IDockerService
         }
     }
 
-    private async Task DockerPullAsync(string image, string server, string version)
+    private async Task PullImageAsync(string image, string server, string version)
     {
         Console.WriteLine($"Updating {server}/{image}:{version}...");
-        var (_, standardError, exitCode) = await _processService.RunAndCaptureAsync(
-            "docker",
-            $"pull {server}/{image}:{version} --quiet",
+        var (_, standardError, exitCode) = await ProcessService.RunAndCaptureAsync(
+            ContainerCli,
+            GetPullArguments(image, server, version),
             throwOnError: false
         );
 
@@ -172,5 +223,25 @@ public class DockerService : IDockerService
             throw new Exception(errorMessage);
         }
         Console.WriteLine($"{server}/{image}:{version} up-to-date");
+    }
+
+    protected virtual string GetPullArguments(string image, string server, string version)
+    {
+        return $"pull {server}/{image}:{version} --quiet";
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.NameEquals(propertyName) || property.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 }
