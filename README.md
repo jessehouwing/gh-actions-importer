@@ -26,6 +26,7 @@ The following requirements must be met to be able to use the GitHub Actions Impo
 
 - A supported container CLI must be installed and available:
   - [Docker](https://docs.docker.com/get-docker/) with the Docker daemon running, or
+  - [Podman](https://podman.io/getting-started/installation), or
   - `wslc` with WSL containers available.
 - The official [GitHub CLI](https://cli.github.com) must be installed.
 - You must have credentials to [authenticate](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry) with the GitHub Container Registry.
@@ -58,12 +59,17 @@ You can find detailed information about using environment variables in the platf
 
 #### Using a custom container CLI
 
-Docker is used by default. To use the Windows Subsystem for Linux Containers CLI instead, set `CONTAINER_CLI=wslc` in your `.env.local` file.
+Docker is used by default. To use a different supported container CLI, set `CONTAINER_CLI` in your `.env.local` file.
 
 ```bash
 # .env.local
-CONTAINER_CLI=wslc
+CONTAINER_CLI=podman
 ```
+
+Supported values are:
+
+- `podman`
+- `wslc`
 
 When `CONTAINER_CLI=wslc` is configured, GitHub Actions Importer automatically avoids Docker-only flags that `wslc` doesn't support, including `docker run --network=host` and `docker pull --quiet`.
 

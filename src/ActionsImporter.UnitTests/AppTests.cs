@@ -36,15 +36,16 @@ public class AppTests
         Console.SetOut(_out);
     }
 
-    [Test]
-    public async Task GetVersionAsync_UsesConfiguredContainerCli()
+    [TestCase("wslc")]
+    [TestCase("podman")]
+    public async Task GetVersionAsync_UsesConfiguredContainerCli(string containerCli)
     {
         // Arrange
         _app = new App(
             _dockerService.Object,
             _processService.Object,
             _configurationService.Object,
-            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", "wslc")
+            ImmutableDictionary<string, string>.Empty.Add("CONTAINER_CLI", containerCli)
         );
 
         _processService.Setup(handler =>
@@ -56,7 +57,7 @@ public class AppTests
         ).ReturnsAsync(("github/gh-actions-importer", "", 0));
 
         _processService.Setup(handler =>
-            handler.RunAndCaptureAsync("wslc", "run --rm ghcr.io/actions-importer/cli:latest version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), false, null)
+            handler.RunAndCaptureAsync(containerCli, "run --rm ghcr.io/actions-importer/cli:latest version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), false, null)
         ).ReturnsAsync(("1.0.0", "", 0));
 
         // Act
