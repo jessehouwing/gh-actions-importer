@@ -7,11 +7,8 @@ namespace ActionsImporter.Services;
 
 public class DockerService : IDockerService
 {
-    private readonly IProcessService _processService;
-    private readonly IRuntimeService _runtimeService;
-
-    protected IProcessService ProcessService => _processService;
-    protected IRuntimeService RuntimeService => _runtimeService;
+    protected IProcessService ProcessService { get; }
+    protected IRuntimeService RuntimeService { get; }
     protected virtual string ContainerCli => "docker";
     protected virtual string VerifyRunningCommand => "info";
     protected virtual string VerifyRunningErrorMessage => "Please ensure docker is installed and the docker daemon is running";
@@ -20,8 +17,8 @@ public class DockerService : IDockerService
     {
         ArgumentNullException.ThrowIfNull(processService);
         ArgumentNullException.ThrowIfNull(runtimeService);
-        _processService = processService;
-        _runtimeService = runtimeService;
+        ProcessService = processService;
+        RuntimeService = runtimeService;
     }
 
     public Task UpdateImageAsync(string image, string server, string version)
