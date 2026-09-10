@@ -82,6 +82,39 @@ We highly recommend using the [official GitHub Container Registry to pull the Gi
 CONTAINER_REGISTRY=my-custom-registry.com
 ```
 
+#### Using a TLS-inspecting proxy and custom root certificates
+
+If your network uses a TLS-inspecting proxy, the GitHub Actions Importer container must trust your organization's certificate authority (CA). Certificates trusted by the host are not automatically trusted inside the container.
+
+Set `CONTAINER_ARGS` in the shell running `gh` to pass additional container run arguments. This is an environment variable, not a `gh actions-importer` command-line option. For Docker, `DOCKER_ARGS` is also supported as a fallback when `CONTAINER_ARGS` is unset.
+
+Prepare a PEM CA bundle containing both the normal public root certificates and your organization's CA certificates. Mount it read-only and explicitly set `SSL_CERT_FILE` to its path **inside the container**:
+
+**Bash (Docker):**
+
+```bash
+CONTAINER_ARGS='--volume "/absolute/path/ca-bundle.pem:/certs/ca-bundle.pem:ro" --env SSL_CERT_FILE=/certs/ca-bundle.pem' \
+  gh actions-importer audit azure-devops --output-dir ./output
+```
+
+**PowerShell (Docker Desktop with Linux containers):**
+
+```powershell
+$env:CONTAINER_ARGS = '--volume "C:\certs\ca-bundle.pem:/certs/ca-bundle.pem:ro" --env SSL_CERT_FILE=/certs/ca-bundle.pem'
+gh actions-importer audit azure-devops --output-dir ./output
+```
+
+Replace the host path with an existing bundle accessible to your container runtime, and use your usual importer command and credentials. If you already use `CONTAINER_ARGS`, combine these arguments with your existing settings rather than replacing them.
+
+Keep the following in mind:
+
+- `SSL_CERT_FILE` can replace a client's default CA bundle, so include public roots as well as your corporate CA. This setting applies to clients that honor it; other runtimes may require their own trust configuration. Merely mounting a certificate does not install it into the container's system trust store.
+- Setting `SSL_CERT_FILE` on the host alone does not forward it into the container; use `--env` as shown above.
+- If an explicit proxy is required, set `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` as appropriate in your shell. GitHub Actions Importer forwards these variables into the container.
+- Configure proxy access and CA trust separately for the host tools and container runtime. These container run arguments do not affect image pulls, including `gh actions-importer update`.
+- The internal feature-discovery container does not currently receive `CONTAINER_ARGS` or `DOCKER_ARGS`.
+- Avoid `--no-ssl-verify` as a solution: it disables certificate verification instead of establishing trust.
+
 ### Documentation
 
 Detailed information about how to use GitHub Actions Importer can be found in the [documentation](https://docs.github.com/en/actions/migrating-to-github-actions/automating-migration-with-github-actions-importer).
