@@ -1,0 +1,276 @@
+﻿License notice for Sharprompt (v2.4.5)
+------------------------------------
+
+https://github.com/shibayan/Sharprompt
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for System.CommandLine (v2.0.0-beta4.22272.1)
+------------------------------------
+
+https://github.com/dotnet/command-line-api at 209b724a3c843253d3071e8348c353b297b0b8b5
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for System.CommandLine.NamingConventionBinder (v2.0.0-beta4.22272.1)
+------------------------------------
+
+https://github.com/dotnet/command-line-api at 209b724a3c843253d3071e8348c353b297b0b8b5
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for System.ComponentModel.Annotations (v5.0.0)
+------------------------------------
+
+git://github.com/dotnet/runtime at cf258a14b70ad9069470a108f13765e0e5988f51
+
+https://github.com/dotnet/runtime
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.NET.Test.Sdk (v18.10.0)
+------------------------------------
+
+https://github.com/microsoft/vstest at 5b0c2fc69de12eb4383a7b6b38acab164a2f68fb
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Extensions.TrxReport (v2.4.0)
+------------------------------------
+
+https://github.com/microsoft/testfx at a2a92fdb11ad38cd55b31223c4cfbb070fa01c05
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Moq (v4.20.72)
+------------------------------------
+
+https://github.com/moq/moq at 959fc5128f868fdcbdbb70dbfca86330980431ba
+
+Copyright (c) 2007, Clarius Consulting, Manas Technology Solutions, InSTEDD, and Contributors. All rights reserved.
+
+Licensed under BSD-3-Clause
+
+Available at https://licenses.nuget.org/BSD-3-Clause
+
+
+License notice for NUnit (v4.6.1)
+------------------------------------
+
+https://github.com/nunit/nunit
+
+https://nunit.org/
+
+Copyright (c) Charlie Poole, Rob Prouse and Contributors. MIT License.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for NUnit3TestAdapter (v6.3.0)
+------------------------------------
+
+https://github.com/nunit/nunit3-vs-adapter
+
+https://docs.nunit.org/articles/vs-test-adapter/Index.html
+
+Copyright (c) 2011-2021 Charlie Poole, 2014-2026 Terje Sandstrom
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Castle.Core (v5.1.1)
+------------------------------------
+
+https://github.com/castleproject/Core
+
+http://www.castleproject.org/
+
+Copyright (c) 2004-2022 Castle Project - http://www.castleproject.org/
+
+Licensed under Apache-2.0
+
+Available at https://licenses.nuget.org/Apache-2.0
+
+
+License notice for Microsoft.ApplicationInsights (v2.23.0)
+------------------------------------
+
+https://github.com/Microsoft/ApplicationInsights-dotnet at 2faa7e8b157a431daa2e71785d68abd5fa817b53
+
+https://go.microsoft.com/fwlink/?LinkId=392727
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.CodeCoverage (v18.10.0)
+------------------------------------
+
+https://github.com/microsoft/vstest at 5b0c2fc69de12eb4383a7b6b38acab164a2f68fb
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Extensions.DependencyModel (v8.0.2)
+------------------------------------
+
+https://github.com/dotnet/runtime at 81cabf2857a01351e5ab578947c7403a5b128ad1
+
+https://dot.net/
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Extensions.Telemetry (v2.3.3)
+------------------------------------
+
+https://github.com/microsoft/testfx at 44aa76e6a61d4908f06dfd77a51d4b7e3e7ce40f
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Extensions.TrxReport.Abstractions (v2.4.0)
+------------------------------------
+
+https://github.com/microsoft/testfx at a2a92fdb11ad38cd55b31223c4cfbb070fa01c05
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Extensions.VSTestBridge (v2.3.3)
+------------------------------------
+
+https://github.com/microsoft/testfx at 44aa76e6a61d4908f06dfd77a51d4b7e3e7ce40f
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Platform (v2.4.0)
+------------------------------------
+
+https://github.com/microsoft/testfx at a2a92fdb11ad38cd55b31223c4cfbb070fa01c05
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.Testing.Platform.MSBuild (v2.3.3)
+------------------------------------
+
+https://github.com/microsoft/testfx at 44aa76e6a61d4908f06dfd77a51d4b7e3e7ce40f
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.TestPlatform.ObjectModel (v18.10.0)
+------------------------------------
+
+https://github.com/microsoft/vstest at 5b0c2fc69de12eb4383a7b6b38acab164a2f68fb
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for Microsoft.TestPlatform.TestHost (v18.10.0)
+------------------------------------
+
+https://github.com/microsoft/vstest at 5b0c2fc69de12eb4383a7b6b38acab164a2f68fb
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for System.Diagnostics.EventLog (v6.0.0)
+------------------------------------
+
+https://github.com/dotnet/runtime at 4822e3c3aa77eb82b2fb33c9321f923cf11ddde6
+
+https://dot.net/
+
+Copyright © Microsoft Corporation. All rights reserved.
+
+Licensed under MIT
+
+Available at https://licenses.nuget.org/MIT
+
+
+License notice for YamlDotNet (v15.1.2)
+------------------------------------
+
+https://github.com/aaubry/YamlDotNet.git
+
+https://github.com/aaubry/YamlDotNet/wiki
+
+Available at https://aka.ms/deprecateLicenseUrl
+
+LICENSE.txt
+
+
