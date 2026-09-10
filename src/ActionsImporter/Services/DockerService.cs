@@ -70,6 +70,13 @@ public class DockerService : IDockerService
     {
         var actionsImporterArguments = new List<string> { "run --rm -t" };
         actionsImporterArguments.AddRange(GetEnvironmentVariableArguments());
+
+        var containerArgs = GetContainerArgs();
+        if (containerArgs is not null)
+        {
+            actionsImporterArguments.Add(containerArgs);
+        }
+
         actionsImporterArguments.Add($"{server}/{image}:{version}");
         actionsImporterArguments.AddRange(new[] { "list-features", "--json" });
 
