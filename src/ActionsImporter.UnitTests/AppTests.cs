@@ -23,6 +23,7 @@ public class AppTests
     [SetUp]
     public void BeforeEachTest()
     {
+        Environment.SetEnvironmentVariable("CONTAINER_CLI", null);
         _dockerService = new Mock<IDockerService>();
         _processService = new Mock<IProcessService>();
         _configurationService = new Mock<IConfigurationService>();
@@ -33,6 +34,7 @@ public class AppTests
     [TearDown]
     public void AfterEachTest()
     {
+        Environment.SetEnvironmentVariable("CONTAINER_CLI", null);
         Console.SetOut(_out);
     }
 
@@ -58,6 +60,31 @@ public class AppTests
 
         _processService.Setup(handler =>
             handler.RunAndCaptureAsync(containerCli, "run --rm ghcr.io/actions-importer/cli:latest version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), false, null)
+        ).ReturnsAsync(("1.0.0", "", 0));
+
+        // Act
+        await _app.GetVersionAsync();
+
+        // Assert
+        _processService.VerifyAll();
+    }
+
+    [Test]
+    public async Task GetVersionAsync_UsesContainerCliFromEnvironment()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("CONTAINER_CLI", "wslc");
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("gh", "version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), It.IsAny<bool>(), null)
+        ).ReturnsAsync(("gh version 2.0.0", "", 0));
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("gh", "extension list", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), It.IsAny<bool>(), null)
+        ).ReturnsAsync(("github/gh-actions-importer", "", 0));
+
+        _processService.Setup(handler =>
+            handler.RunAndCaptureAsync("wslc", "run --rm ghcr.io/actions-importer/cli:latest version", It.IsAny<string?>(), It.IsAny<IEnumerable<(string, string)>?>(), false, null)
         ).ReturnsAsync(("1.0.0", "", 0));
 
         // Act

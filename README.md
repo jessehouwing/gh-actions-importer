@@ -14,7 +14,7 @@
 
 ## How to request support
 
-If you need assistance, you can file a support ticket [here](https://support.github.com).
+If you need assistance, you can file a [support ticket](https://support.github.com).
 
 ## Getting started
 
@@ -59,11 +59,16 @@ You can find detailed information about using environment variables in the platf
 
 #### Using a custom container CLI
 
-Docker is used by default. To use a different supported container CLI, set `CONTAINER_CLI` in your `.env.local` file.
+Docker is used by default. To use a different supported container CLI, set `CONTAINER_CLI` in the shell running `gh` or in your `.env.local` file. Shell environment variables take precedence over `.env.local`.
 
 ```bash
 # .env.local
 CONTAINER_CLI=podman
+```
+
+```powershell
+$env:CONTAINER_CLI = "wslc"
+gh actions-importer update
 ```
 
 Supported values are:
@@ -139,4 +144,4 @@ To learn about new features coming to GitHub Actions Importer, see the [GitHub P
 
 ## How to offer feedback or make a feature request
 
-If you would like to offer feedback or make a feature request, please create a new discussion [here](https://github.com/github/gh-actions-importer/discussions/new/choose).
+If you would like to offer feedback or make a feature request, please create a new [GitHub Actions Importer discussion](https://github.com/github/gh-actions-importer/discussions/new/choose).

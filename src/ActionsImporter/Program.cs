@@ -11,13 +11,7 @@ using Version = ActionsImporter.Commands.Version;
 var processService = new ProcessService();
 var configurationService = new ConfigurationService();
 var environmentVariables = await configurationService.ReadCurrentVariablesAsync();
-var containerCli = environmentVariables.TryGetValue("CONTAINER_CLI", out var configuredContainerCli) ? configuredContainerCli : null;
-var dockerService = containerCli?.ToUpperInvariant() switch
-{
-    "WSLC" => new WslcDockerService(processService, new RuntimeService()),
-    "PODMAN" => new PodmanDockerService(processService, new RuntimeService()),
-    _ => new DockerService(processService, new RuntimeService())
-};
+var dockerService = ContainerConfiguration.CreateDockerService(processService, new RuntimeService(), environmentVariables);
 
 var app = new App(
     dockerService,

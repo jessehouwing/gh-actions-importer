@@ -41,14 +41,16 @@ public class WslcDockerServiceTests
         var server = "ghcr.io";
         var version = "latest";
         var arguments = new[] { "run", "this", "command" };
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var volumePath = currentDirectory.Replace('\\', '/');
 
         Environment.SetEnvironmentVariable("WSLC_ARGS", "--detach");
 
         _processService.Setup(handler =>
             handler.RunAsync(
                 "wslc",
-                $"run --rm -t --detach -v \"{Directory.GetCurrentDirectory()}\":/data {server}/{image}:{version} {string.Join(' ', arguments)}",
-                Directory.GetCurrentDirectory(),
+                $"run --rm -t --detach -v \"{volumePath}\":/data {server}/{image}:{version} {string.Join(' ', arguments)}",
+                currentDirectory,
                 new[] { new ValueTuple<string, string>("MSYS_NO_PATHCONV", "1") },
                 true
             )

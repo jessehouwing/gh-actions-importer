@@ -4,9 +4,6 @@ on:
     branches: [main]
     tags: ["v*"]
 
-env:
-  DOTNET_VERSION: "6.0.x"
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -19,11 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-      - name: install dotnet-format
-        run: dotnet tool install -g dotnet-format --version 5.1.225507
+          global-json-file: src/global.json
       - name: lint
         working-directory: src
         run: dotnet format ActionsImporter.sln --verify-no-changes
@@ -35,44 +30,51 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: src/global.json
       - name: dotnet restore
-        run: dotnet restore src/ActionsImporter.sln
+        working-directory: src
+        run: dotnet restore ActionsImporter.sln
       - name: dotnet build
-        run: dotnet build src/ActionsImporter.sln
+        working-directory: src
+        run: dotnet build ActionsImporter.sln
       - name: dotnet test
-        run: dotnet test src/ActionsImporter.UnitTests/ActionsImporter.UnitTests.csproj --no-build --no-restore --logger "junit;LogFilePath=unit-tests.xml"
+        working-directory: src
+        run: dotnet test ActionsImporter.UnitTests/ActionsImporter.UnitTests.csproj --no-build --no-restore --report-trx --report-trx-filename unit-tests.trx
       - name: publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          files: "**/*-tests.xml"
+          files: "**/*.trx"
           check_name: "Unit Test Results"
 
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: src/global.json
       - name: dotnet restore
-        run: dotnet restore src/ActionsImporter.sln
+        working-directory: src
+        run: dotnet restore ActionsImporter.sln
       - name: dotnet build
-        run: dotnet build src/ActionsImporter.sln
+        working-directory: src
+        run: dotnet build ActionsImporter.sln
       - name: Validate licenses
+        working-directory: src
         run: |
           dotnet tool install --global ThirdLicense --version 1.2.0
-          thirdlicense --project src/ActionsImporter.sln --output .licenses/new-licenses.txt
-          diff -u .licenses/new-licenses.txt .licenses/licenses.txt
+          thirdlicense --project ActionsImporter.sln --output ../.licenses/new-licenses.txt
+          diff -u ../.licenses/new-licenses.txt ../.licenses/licenses.txt
       - name: dotnet publish
+        working-directory: src
         run: |
-          dotnet publish src/ActionsImporter/ActionsImporter.csproj -c Release -r win10-x64 --self-contained -o dist/win-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-          dotnet publish src/ActionsImporter/ActionsImporter.csproj -c Release -r osx-x64 --self-contained -o dist/osx-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-          dotnet publish src/ActionsImporter/ActionsImporter.csproj -c Release -r osx-arm64 --self-contained -o dist/osx-arm64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-          dotnet publish src/ActionsImporter/ActionsImporter.csproj -c Release -r linux-x64 --self-contained -o dist/linux-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+          dotnet publish ActionsImporter/ActionsImporter.csproj -c Release -r win-x64 --self-contained -o ../dist/win-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+          dotnet publish ActionsImporter/ActionsImporter.csproj -c Release -r osx-x64 --self-contained -o ../dist/osx-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+          dotnet publish ActionsImporter/ActionsImporter.csproj -c Release -r osx-arm64 --self-contained -o ../dist/osx-arm64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+          dotnet publish ActionsImporter/ActionsImporter.csproj -c Release -r linux-x64 --self-contained -o ../dist/linux-x64 --no-restore -p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
       - name: prepare staging
         run: |
           mkdir -p ${{ runner.temp }}/staging

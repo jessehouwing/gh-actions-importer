@@ -55,11 +55,38 @@ dotnet_diagnostic.IDE0058.severity = none
 # IDE0022: Use block body for methods
 dotnet_diagnostic.IDE0022.severity = none
 
+# IDE0028: Collection initialization can be simplified
+dotnet_diagnostic.IDE0028.severity = none
+
 # IDE0011: Add braces
 dotnet_diagnostic.IDE0011.severity = none
 
 # IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = none
+
+# IDE0090: 'new' expression can be simplified
+dotnet_diagnostic.IDE0090.severity = none
+
+# IDE0200: Lambda expression can be removed
+dotnet_diagnostic.IDE0200.severity = none
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = none
+
+# IDE0300: Collection initialization can be simplified
+dotnet_diagnostic.IDE0300.severity = none
+
+# IDE0301: Collection initialization can be simplified
+dotnet_diagnostic.IDE0301.severity = none
+
+# IDE0303: Collection initialization can be simplified
+dotnet_diagnostic.IDE0303.severity = none
+
+# IDE0305: Collection initialization can be simplified
+dotnet_diagnostic.IDE0305.severity = none
+
+# IDE0330: Use System.Threading.Lock
+dotnet_diagnostic.IDE0330.severity = none
 
 # JSON002: Probable JSON string detected
 dotnet_diagnostic.JSON002.severity = none
@@ -89,8 +116,14 @@ dotnet_diagnostic.CA1065.severity = none
 # CA1031: Do not catch general exception types
 dotnet_diagnostic.CA1031.severity = none
 
+# CA1515: Types can be made internal
+dotnet_diagnostic.CA1515.severity = none
+
 # CA1812: Avoid uninstantiated internal classes
 dotnet_diagnostic.CA1812.severity = none
+
+# CA1849: Call async methods when in an async method
+dotnet_diagnostic.CA1849.severity = none
 
 # CA1815: Override equals and operator equals on value types
 dotnet_diagnostic.CA1815.severity = none

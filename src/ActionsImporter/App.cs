@@ -17,7 +17,7 @@ public class App
 
     private readonly ImmutableDictionary<string, string> _environmentVariables;
     private string ImageTag => IsPrerelease ? "pre" : "latest";
-    private string ContainerCli => _environmentVariables.TryGetValue("CONTAINER_CLI", out var containerCli) && !string.IsNullOrWhiteSpace(containerCli) ? containerCli : "docker";
+    private string ContainerCli => ContainerConfiguration.GetContainerCli(_environmentVariables);
 
     private string ImageName => $"{ActionsImporterImage}:{ImageTag}";
     private readonly string ActionsImporterContainerRegistry;
